@@ -1,0 +1,620 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>龙傲天实用html</title>
+    <style>
+        *{margin:0;padding:0;box-sizing:border-box;}
+        body{background:#0a0f1e;font-family:system-ui;padding:20px;color:#eef5ff;}
+        .container{max-width:1600px;margin:0 auto;}
+        .card{background:#10172b;border-radius:48px;padding:28px;margin-bottom:20px;border:1px solid #2a3550;}
+        input,textarea,select,button{width:100%;padding:14px;margin:10px 0;border-radius:60px;border:none;font-size:1rem;}
+        input,textarea,select{background:#01040f;border:1px solid #2b3452;color:white;}
+        button{background:#3b82f6;color:white;font-weight:bold;cursor:pointer;}
+        .balance{font-size:2rem;font-weight:bold;margin:10px 0;color:#6eff8e;}
+        .product-item{background:#0e1625;border-radius:24px;padding:16px;margin-top:12px;}
+        .flex-between{display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px;}
+        .hidden{display:none;}
+        .tab{display:flex;gap:10px;margin-bottom:20px;flex-wrap:wrap;}
+        .tab-btn{background:#1f2a46;border-radius:60px;padding:10px 20px;cursor:pointer;width:auto;}
+        .tab-btn.active{background:#3b82f6;}
+        .price{color:#6eff8e;font-size:1.2rem;}
+        .stock{color:#ffaa66;}
+        .copy-btn{background:#1f2a46;padding:6px 16px;width:auto;}
+        .goods-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(350px,1fr));gap:16px;}
+        .preview-img{max-width:100px;border-radius:12px;margin-top:8px;}
+        .report-btn{background:#8b0000;margin-top:8px;}
+        .report-btn:hover{background:#660000;}
+        .success-box{background:#1f7a1f;border-radius:24px;padding:16px;margin-top:12px;color:#ccffcc;}
+        .code-preview{background:#0a0f1e;border-radius:24px;padding:16px;font-family:monospace;font-size:0.7rem;overflow:auto;max-height:400px;white-space:pre-wrap;margin-top:12px;}
+        .contact-info{color:#6eff8e;font-size:0.8rem;margin-top:6px;}
+        .verify-row{display:flex;gap:10px;align-items:center;}
+        .verify-row input{flex:2;margin:0;}
+        .verify-row button{flex:1;margin:0;padding:14px;}
+        .banned-tag{color:#ff6666;margin-left:8px;}
+    </style>
+</head>
+<body>
+<div class="container">
+    <div id="app">
+        <div id="normalContent">
+            <div id="authPanel" class="card">
+                <h2>🔐 登录</h2>
+                <input type="text" id="loginUser" placeholder="用户名 / 邮箱 / 手机号">
+                <input type="password" id="loginPass" placeholder="密码">
+                <button id="loginBtn">登录</button>
+                <div class="flex-between" style="margin-top:10px;">
+                    <button id="toRegisterBtn" style="background:#1f2a46; width:48%;">注册账号</button>
+                    <button id="toResetBtn" style="background:#1f2a46; width:48%;">忘记密码</button>
+                </div>
+            </div>
+
+            <div id="registerPanel" class="card hidden">
+                <h2>📝 注册</h2>
+                <input type="text" id="regUsername" placeholder="用户名">
+                <input type="text" id="regEmail" placeholder="邮箱">
+                <input type="text" id="regPhone" placeholder="手机号">
+                <input type="password" id="regPass" placeholder="密码">
+                <div class="verify-row">
+                    <input type="text" id="regCode" placeholder="验证码">
+                    <button id="sendCodeBtn">获取验证码</button>
+                </div>
+                <button id="registerBtn">注册</button>
+                <button id="backToLoginBtn" style="background:#1f2a46;">返回登录</button>
+            </div>
+
+            <!-- 重置密码面板 -->
+            <div id="resetPanel" class="card hidden">
+                <h2>🔒 重置密码</h2>
+                <input type="text" id="resetAccount" placeholder="用户名 / 邮箱 / 手机号">
+                <div id="securityQuestion" style="display:none;">
+                    <p>安全问题：<span id="questionText"></span></p>
+                    <input type="text" id="securityAnswer" placeholder="答案">
+                </div>
+                <div id="newPassArea" style="display:none;">
+                    <input type="password" id="newPassword" placeholder="新密码">
+                </div>
+                <button id="resetNextBtn">下一步</button>
+                <button id="resetConfirmBtn" style="display:none;">确认重置</button>
+                <button id="backToLoginBtn2" style="background:#1f2a46; margin-top:10px;">返回登录</button>
+            </div>
+
+            <!-- 主面板 -->
+            <div id="mainPanel" class="hidden">
+                <div class="card">
+                    <div class="flex-between">
+                        <h2>👤 用户中心</h2>
+                        <button id="logoutBtn" style="width:auto;">退出</button>
+                    </div>
+                    <div class="balance" id="balance">¥0</div>
+                    <div class="flex-between">
+                        <button id="showRechargeBtn">💰 充值申请</button>
+                        <button id="showWithdrawBtn">💸 提现</button>
+                        <button id="showCardBtn">🎫 卡密兑换</button>
+                        <button id="showGenerateCardBtn">✨ 生成卡密</button>
+                    </div>
+                </div>
+
+                <div class="tab">
+                    <div class="tab-btn active" data-tab="shop">🛒 商城首页</div>
+                    <div class="tab-btn" data-tab="myProducts">📦 我的商品</div>
+                    <div class="tab-btn" data-tab="orders">📋 交易记录</div>
+                    <div class="tab-btn" data-tab="webLock">🔒 网页卡密锁</div>
+                    <div class="tab-btn" data-tab="sites">🌐 我的站点</div>
+                    <div class="tab-btn" data-tab="genCard">✨ 生成商品卡密</div>
+                </div>
+
+                <div id="shopTab" class="tab-content"><div class="card"><h3>🛒 在售商品</h3><div id="productList" class="goods-grid"></div></div></div>
+                <div id="myProductsTab" class="tab-content hidden"><div class="card"><div class="flex-between"><h3>📦 我的商品</h3><button id="createProductBtn" style="width:auto;">+ 发布商品</button></div><div id="myProductsList"></div></div></div>
+                <div id="ordersTab" class="tab-content hidden"><div class="card"><h3>📋 交易记录</h3><div id="ordersList"></div></div></div>
+                <div id="webLockTab" class="tab-content hidden">
+                    <div class="card">
+                        <h3>🔒 网页卡密锁生成器</h3>
+                        <textarea id="webSource" rows="8" placeholder="粘贴你的网页源码"></textarea>
+                        <input type="text" id="lockPassword" placeholder="卡密" value="RL2026">
+                        <button id="generateWebLockBtn">生成加密网页</button>
+                        <button id="copyWebLockBtn" class="copy-btn hidden">📋 一键复制</button>
+                        <div id="webLockPreview" class="hidden"></div>
+                    </div>
+                </div>
+                <div id="sitesTab" class="tab-content hidden"><div class="card"><h3>🌐 我的站点</h3><div id="mySites"></div></div></div>
+                
+                <!-- 生成商品卡密 -->
+                <div id="genCardTab" class="tab-content hidden">
+                    <div class="card">
+                        <h3>✨ 选择商品生成卡密（消耗余额）</h3>
+                        <p>当前余额：<span id="genBalance">¥0</span></p>
+                        <select id="productForCard"></select>
+                        <input type="number" id="cardUses" placeholder="使用次数" value="1">
+                        <button id="genProductCardBtn">生成卡密（扣商品价格）</button>
+                        <div id="genCardResult" class="success-box hidden" style="margin-top:16px;"></div>
+                    </div>
+                    <div class="card">
+                        <h3>📋 我生成的卡密</h3>
+                        <div id="myGeneratedCards"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- 充值申请弹窗 -->
+<div id="rechargeModal" class="card hidden" style="position:fixed; top:50%; left:50%; transform:translate(-50%,-50%); z-index:1000; max-width:450px;">
+    <h3>💳 充值申请</h3>
+    <img src="https://i.ibb.co/LXBJcgVh/mm-facetoface-collect-qrcode-1778001786663.png" style="width:180px; margin:10px auto; display:block;">
+    <p style="font-size:0.7rem;">长按保存 → 微信扫码支付</p>
+    <input type="number" id="applyAmount" placeholder="金额" value="100">
+    <p>📎 支付凭证</p>
+    <input type="file" id="proofImage" accept="image/*">
+    <div id="proofPreview"></div>
+    <button id="submitApplyBtn">提交申请</button>
+    <button id="closeRechargeBtn">取消</button>
+</div>
+
+<!-- 提现弹窗 -->
+<div id="withdrawModal" class="card hidden" style="position:fixed; top:50%; left:50%; transform:translate(-50%,-50%); z-index:1000; max-width:450px;">
+    <h3>💸 提现</h3>
+    <p>当前余额：<span id="withdrawBalance">¥0</span></p>
+    <input type="number" id="withdrawAmount" placeholder="金额">
+    <input type="text" id="withdrawAccount" placeholder="微信号/手机号">
+    <input type="file" id="withdrawImage" accept="image/*">
+    <div id="withdrawImagePreview"></div>
+    <button id="submitWithdrawBtn">提交</button>
+    <button id="closeWithdrawBtn">取消</button>
+</div>
+
+<!-- 卡密兑换弹窗 -->
+<div id="cardModal" class="card hidden" style="position:fixed; top:50%; left:50%; transform:translate(-50%,-50%); z-index:1000; max-width:400px;">
+    <h3>🎫 卡密兑换</h3>
+    <input type="text" id="cardCode" placeholder="输入卡密">
+    <button id="redeemCardBtn">兑换</button>
+    <button id="closeCardBtn">取消</button>
+</div>
+
+<div id="modalOverlay" class="hidden" style="position:fixed; top:0; left:0; right:0; bottom:0; background:rgba(0,0,0,0.8); z-index:999;"></div>
+
+<script>
+    if(localStorage.getItem("attack_mode") === "true") {
+        document.getElementById("app").innerHTML = `<div style="text-align:center;padding:100px;"><h1>🔒 平台已被锁定</h1></div>`;
+        throw new Error("locked");
+    }
+
+    let allUsers = JSON.parse(localStorage.getItem("all_users")) || [];
+    let products = JSON.parse(localStorage.getItem("products")) || [];
+    let withdrawRequests = JSON.parse(localStorage.getItem("withdraw_requests")) || [];
+    let productCards = JSON.parse(localStorage.getItem("product_cards")) || [];
+    let currentUser = null;
+    let currentProofData = null;
+    let currentWithdrawImage = null;
+    let currentResetUser = null;
+    let sentCode = null;
+
+    function saveAll() { localStorage.setItem("all_users", JSON.stringify(allUsers)); }
+    function saveProducts() { localStorage.setItem("products", JSON.stringify(products)); }
+    function saveWithdraw() { localStorage.setItem("withdraw_requests", JSON.stringify(withdrawRequests)); }
+    function saveProductCards() { localStorage.setItem("product_cards", JSON.stringify(productCards)); }
+
+    // ========== 封禁检测 ==========
+    function checkBanned(user) {
+        if(user && user.banned) {
+            alert("您的账号已被封禁，请联系管理员");
+            return true;
+        }
+        return false;
+    }
+
+    // ========== 生成商品卡密 ==========
+    function generateProductCard(product, maxUses) {
+        if(!product) return alert("请选择商品");
+        if(maxUses <= 0) maxUses = 1;
+        if(currentUser.balance < product.price) return alert(`余额不足，需要 ¥${product.price}`);
+        
+        currentUser.balance -= product.price;
+        
+        let code = `${Math.random().toString(36).substring(2,6).toUpperCase()}-${Math.random().toString(36).substring(2,6).toUpperCase()}-${Math.random().toString(36).substring(2,6).toUpperCase()}-${Math.random().toString(36).substring(2,6).toUpperCase()}`;
+        
+        productCards.push({
+            id: Date.now(),
+            code: code,
+            productId: product.id,
+            productName: product.name,
+            amount: product.price,
+            maxUses: maxUses,
+            usedCount: 0,
+            status: "active",
+            createdBy: currentUser.username,
+            createdAt: new Date().toLocaleString(),
+            type: product.type,
+            contact: product.contact,
+            cards: product.cards
+        });
+        
+        saveAll();
+        saveProductCards();
+        
+        document.getElementById("genCardResult").innerHTML = `
+            <div style="padding:12px;">
+                ✅ 卡密生成成功！<br>
+                <strong style="font-size:1rem;">${code}</strong><br>
+                兑换商品: ${product.name} | 面额: ¥${product.price} | 可用次数: ${maxUses}<br>
+                <button class="copy-btn" onclick="copyToClipboard('${code}')" style="margin-top:8px;">📋 复制卡密</button>
+            </div>
+        `;
+        document.getElementById("genCardResult").classList.remove("hidden");
+        renderUserPanel();
+        renderMyGeneratedCards();
+        return true;
+    }
+    
+    function redeemProductCard(code) {
+        let card = productCards.find(c => c.code === code && c.status === "active");
+        if(!card) return alert("卡密无效或已使用");
+        if(card.maxUses && card.usedCount >= card.maxUses) return alert("卡密使用次数已用完");
+        
+        if(card.type === "card") {
+            alert(`兑换成功！获得卡密：\n${card.cards || "无卡密信息"}`);
+        } else {
+            alert(`兑换成功！商品：${card.productName}\n请联系卖家：${card.contact || "未提供"}`);
+        }
+        
+        card.usedCount++;
+        if(card.maxUses && card.usedCount >= card.maxUses) card.status = "used";
+        saveProductCards();
+        
+        currentUser.orders = currentUser.orders || [];
+        currentUser.orders.unshift({ id: Date.now(), type: "卡密兑换", amount: 0, status: "success", detail: `兑换商品 ${card.productName}`, time: new Date().toLocaleString() });
+        saveAll();
+        
+        alert("✅ 兑换成功！");
+        renderUserPanel();
+    }
+
+    // 验证码模拟
+    function sendVerifyCode(type, contact) {
+        let code = Math.floor(100000 + Math.random() * 900000);
+        sentCode = code;
+        alert(`【模拟】验证码：${code}，已发送至${contact}（演示模式）`);
+        return true;
+    }
+
+    // 充值申请
+    function addRechargeRequest(amount, proof) {
+        if(amount <= 0) return alert("金额无效");
+        let requests = JSON.parse(localStorage.getItem("recharge_requests") || "[]");
+        requests.unshift({ id: Date.now(), username: currentUser.username, amount, proof: proof || null, status: "pending", time: new Date().toLocaleString() });
+        localStorage.setItem("recharge_requests", JSON.stringify(requests));
+        currentUser.orders = currentUser.orders || [];
+        currentUser.orders.unshift({ id: Date.now(), type: "充值申请", amount: amount, status: "pending", detail: `申请充值 ${amount} 元`, time: new Date().toLocaleString() });
+        saveAll();
+        alert("充值申请已提交，等待管理员审核");
+    }
+
+    function requestWithdraw(amount, account, image) {
+        if(amount <= 0) return alert("金额无效");
+        if(currentUser.balance < amount) return alert("余额不足");
+        if(!account.trim()) return alert("请填写账号");
+        currentUser.balance -= amount;
+        withdrawRequests.unshift({ id: Date.now(), username: currentUser.username, amount, account, image: image || null, status: "pending", time: new Date().toLocaleString() });
+        saveAll(); saveWithdraw();
+        alert(`提现申请已提交 ¥${amount}`);
+        renderUserPanel();
+    }
+
+    // 举报商品
+    function reportProduct(productId, productName, seller) {
+        let reason = prompt("举报原因", "虚假商品");
+        if(!reason) return;
+        let reports = JSON.parse(localStorage.getItem("product_reports") || "[]");
+        reports.unshift({ id: Date.now(), productId, productName, seller, reporter: currentUser.username, reason, status: "pending", time: new Date().toLocaleString() });
+        localStorage.setItem("product_reports", JSON.stringify(reports));
+        alert("举报已提交");
+    }
+
+    // 网页卡密锁
+    function generateWebLock() {
+        let src = document.getElementById("webSource").value;
+        let pwd = document.getElementById("lockPassword").value;
+        if(!src.trim()) return alert("请粘贴源码");
+        if(!pwd.trim()) return alert("请设置卡密");
+        let locked = `<!DOCTYPE html><html><head><meta charset="UTF-8"><title>卡密锁</title><style>body{background:#0a0f1e;font-family:system-ui;display:flex;justify-content:center;align-items:center;min-height:100vh;}.box{background:#10172b;border-radius:48px;padding:40px;width:350px;text-align:center;}input,button{width:100%;padding:14px;margin:10px 0;border-radius:60px;}input{background:#01040f;border:1px solid #2b3452;color:white;}button{background:#3b82f6;color:white;cursor:pointer;}</style></head><body><div class="box" id="lockPanel"><h2>🔒 卡密</h2><input type="password" id="keyInput" placeholder="卡密"><button onclick="verify()">验证</button><div id="err" class="error"></div></div><div id="content" style="display:none;">${src.replace(/<\/script>/gi, '<\\/script>')}</div><script>const KEY="${pwd}";function verify(){if(document.getElementById("keyInput").value===KEY){document.getElementById("lockPanel").style.display="none";document.getElementById("content").style.display="block";}else document.getElementById("err").innerText="卡密错误";}<\/script></body></html>`;
+        document.getElementById("webLockPreview").innerHTML = `<div class="success-box">✅ 成功</div><pre class="code-preview">${escapeHtml(locked)}</pre>`;
+        document.getElementById("webLockPreview").classList.remove("hidden");
+        document.getElementById("copyWebLockBtn").classList.remove("hidden");
+        window.currentWebLock = locked;
+    }
+    function copyWebLock() { if(window.currentWebLock) { navigator.clipboard.writeText(window.currentWebLock); alert("✅ 已复制"); } else alert("请先生成"); }
+    function escapeHtml(str) { return str.replace(/[&<>]/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;'}[m])); }
+
+    // 商城函数
+    function getProductLink(id) { return location.origin+location.pathname+"?action=buy&id="+id; }
+    function copyToClipboard(text) { navigator.clipboard.writeText(text); alert("✅ 已复制"); }
+    function buyProduct(p, qty) {
+        let total = p.price * qty;
+        if(currentUser.balance < total) return alert("余额不足");
+        if(p.stock < qty) return alert("库存不足");
+        let seller = allUsers.find(u=>u.username===p.seller);
+        if(!seller) return alert("卖家不存在");
+        if(seller.banned) return alert("卖家已被封禁，无法购买");
+        p.stock -= qty; p.sales = (p.sales||0)+qty;
+        currentUser.balance -= total; seller.balance += total;
+        saveAll(); saveProducts();
+        let orderDetail = { productName: p.name, productId: p.id, qty, total, seller: p.seller, contact: p.contact || "未提供", type: p.type };
+        if(p.type === "card") {
+            let cards = p.cards.split("\n").filter(c=>c.trim());
+            let bought = cards.splice(0, qty);
+            p.cards = cards.join("\n");
+            saveProducts();
+            orderDetail.cards = bought;
+            alert(`✅ 购买成功！卡密：\n${bought.join("\n")}`);
+        } else {
+            alert(`✅ 购买成功！请联系卖家：${p.contact || "未设置"}`);
+        }
+        currentUser.orders = currentUser.orders || [];
+        currentUser.orders.unshift({ id: Date.now(), type: "购物", amount: total, status: "success", detail: JSON.stringify(orderDetail), time: new Date().toLocaleString() });
+        saveAll();
+        renderProductList(); renderMyProducts(); renderOrdersList(); renderUserPanel();
+    }
+    function showBuyModal(p) { let qty = prompt(`购买 ${p.name}\n¥${p.price} 库存:${p.stock}\n数量:`, "1"); if(qty) buyProduct(p, parseInt(qty)); }
+    function renderProductList() {
+        let activeProducts = products.filter(p=>p.status==="active"&&p.stock>0);
+        let html = activeProducts.map(p=>`
+            <div class="product-item">
+                <div><strong>${p.name}</strong><br>¥${p.price} | 库存:${p.stock}<div class="seller">卖家:${p.seller}</div>
+                ${p.contact ? `<div class="contact-info">📞 联系: ${p.contact}</div>` : ''}
+                </div>
+                <div class="flex-between">
+                    <button onclick='showBuyModal(${JSON.stringify(p)})'>购买</button>
+                    <button class="copy-btn" onclick='copyToClipboard("${getProductLink(p.id)}")'>复制链接</button>
+                    <button class="report-btn" onclick='reportProduct(${p.id}, "${p.name}", "${p.seller}")'>举报</button>
+                </div>
+            </div>
+        `).join("");
+        document.getElementById("productList").innerHTML = html || "暂无商品";
+    }
+    function renderMyProducts() {
+        let my = products.filter(p=>p.seller===currentUser.username);
+        let html = my.map(p=>`<div class="product-item"><div><strong>${p.name}</strong><br>¥${p.price} | 库存:${p.stock} | 销量:${p.sales||0}<br>📞 联系方式: ${p.contact || "未设置"}</div><div class="flex-between"><button onclick="deleteProduct(${p.id})">删除</button><button class="copy-btn" onclick='copyToClipboard("${getProductLink(p.id)}")'>复制链接</button></div></div>`).join("");
+        document.getElementById("myProductsList").innerHTML = html || "暂无，点上方发布";
+    }
+    function deleteProduct(id) { if(confirm("删除?")) { products=products.filter(p=>p.id!==id); saveProducts(); renderMyProducts(); renderProductList(); } }
+    function createProduct(n, p, s, type, cards, contact) { products.push({ id:Date.now(), name:n, price:p, stock:s, type, cards:cards||"", contact:contact||"", seller:currentUser.username, sales:0, status:"active" }); saveProducts(); renderMyProducts(); renderProductList(); }
+    function renderOrdersList() {
+        let orders = (currentUser.orders||[]).slice(0,20);
+        let html = orders.map(o => {
+            let detail = {};
+            try { detail = JSON.parse(o.detail); } catch(e) { detail = { detail: o.detail }; }
+            return `<div class="product-item">
+                <div>💰 ${o.type} | ¥${o.amount} | ${o.status}<br>时间: ${o.time}</div>
+                <button class="view-btn" onclick='alert("商品: ${detail.productName || ""}\\n卖家: ${detail.seller || ""}\\n联系方式: ${detail.contact || "未提供"}\\n${detail.cards ? "卡密: " + detail.cards.join("\\n") : ""}")'>查看详情</button>
+            </div>`;
+        }).join("");
+        document.getElementById("ordersList").innerHTML = html || "暂无订单";
+    }
+    function renderSites() { document.getElementById("mySites").innerHTML = (currentUser.sites||[]).map(s=>`<div class="product-item"><strong>${s.name}</strong><br>📁 ${s.domain}<button onclick="alert(decodeURIComponent('${encodeURIComponent(s.source)}'))">源码</button></div>`).join("") || "暂无"; }
+    function renderUserPanel() { document.getElementById("balance").innerHTML = "¥"+currentUser.balance; }
+    
+    // 生成商品卡密面板
+    function renderProductForCardSelect() {
+        let activeProducts = products.filter(p=>p.status==="active");
+        let options = activeProducts.map(p => `<option value='${JSON.stringify(p)}'>${p.name} - ¥${p.price}</option>`).join("");
+        document.getElementById("productForCard").innerHTML = options || "<option>暂无商品</option>";
+        document.getElementById("genBalance").innerText = "¥"+currentUser.balance;
+    }
+    
+    function renderMyGeneratedCards() {
+        let myCards = productCards.filter(c => c.createdBy === currentUser.username);
+        let html = myCards.map(c => `
+            <div class="product-item">
+                <div><strong>${c.productName}</strong><br>卡密: ${c.code}<br>面额: ¥${c.amount} | 剩余次数: ${c.maxUses - c.usedCount}<br>状态: ${c.status === "active" ? "✅ 有效" : "❌ 已用完"}<br>生成时间: ${c.createdAt}</div>
+                <button class="copy-btn" onclick="copyToClipboard('${c.code}')">📋 复制卡密</button>
+            </div>
+        `).join("");
+        document.getElementById("myGeneratedCards").innerHTML = html || "暂无生成的卡密";
+    }
+
+    // Tab切换
+    document.querySelectorAll(".tab-btn").forEach(btn=>{ btn.onclick=()=>{
+        document.querySelectorAll(".tab-btn").forEach(b=>b.classList.remove("active"));
+        btn.classList.add("active");
+        let tab=btn.dataset.tab;
+        document.querySelectorAll(".tab-content").forEach(t=>t.classList.add("hidden"));
+        document.getElementById(tab+"Tab").classList.remove("hidden");
+        if(tab==="shop") renderProductList();
+        if(tab==="myProducts") renderMyProducts();
+        if(tab==="orders") renderOrdersList();
+        if(tab==="sites") renderSites();
+        if(tab==="genCard") { renderProductForCardSelect(); renderMyGeneratedCards(); }
+    }});
+
+    // 注册验证
+    let countdown = 0;
+    document.getElementById("sendCodeBtn").onclick = () => {
+        if(countdown > 0) return alert(`请等待 ${countdown} 秒`);
+        let email = document.getElementById("regEmail").value;
+        let phone = document.getElementById("regPhone").value;
+        if(!email && !phone) return alert("请填写邮箱或手机号");
+        let contact = email || phone;
+        sendVerifyCode("register", contact);
+        countdown = 60;
+        let timer = setInterval(() => { countdown--; if(countdown<=0) clearInterval(timer); }, 1000);
+    };
+    
+    document.getElementById("registerBtn").onclick = () => {
+        let username = document.getElementById("regUsername").value;
+        let email = document.getElementById("regEmail").value;
+        let phone = document.getElementById("regPhone").value;
+        let pwd = document.getElementById("regPass").value;
+        let code = document.getElementById("regCode").value;
+        if(!username || !pwd) return alert("用户名和密码必填");
+        if(!email && !phone) return alert("请填写邮箱或手机号");
+        if(!code) return alert("请输入验证码");
+        if(parseInt(code) !== sentCode) return alert("验证码错误");
+        if(allUsers.find(u=>u.username===username)) return alert("用户名已存在");
+        if(allUsers.find(u=>u.email===email && email)) return alert("邮箱已被注册");
+        if(allUsers.find(u=>u.phone===phone && phone)) return alert("手机号已被注册");
+        let newUser = { id:Date.now(), username:username, password:pwd, email:email, phone:phone, balance:0, sites:[], orders:[], role:"user", securityQuestion:"你最喜欢什么颜色？", securityAnswer:"蓝色" };
+        allUsers.push(newUser);
+        saveAll();
+        alert("注册成功！请登录");
+        document.getElementById("registerPanel").classList.add("hidden");
+        document.getElementById("authPanel").classList.remove("hidden");
+    };
+
+    // 重置密码
+    let resetStep = 1;
+    document.getElementById("resetNextBtn").onclick = () => {
+        let account = document.getElementById("resetAccount").value;
+        let user = allUsers.find(u=>u.username===account || u.email===account || u.phone===account);
+        if(!user) return alert("账号不存在");
+        currentResetUser = user;
+        document.getElementById("securityQuestion").style.display = "block";
+        document.getElementById("questionText").innerText = user.securityQuestion || "你最喜欢什么颜色？";
+        resetStep = 2;
+        document.getElementById("resetNextBtn").style.display = "none";
+        document.getElementById("resetConfirmBtn").style.display = "block";
+    };
+    document.getElementById("resetConfirmBtn").onclick = () => {
+        let answer = document.getElementById("securityAnswer").value;
+        if(!answer) return alert("请输入安全答案");
+        if(answer !== currentResetUser.securityAnswer) return alert("答案错误");
+        document.getElementById("newPassArea").style.display = "block";
+        let newPwd = document.getElementById("newPassword").value;
+        if(!newPwd) return alert("请输入新密码");
+        currentResetUser.password = newPwd;
+        saveAll();
+        alert("密码重置成功！请登录");
+        document.getElementById("resetPanel").classList.add("hidden");
+        document.getElementById("authPanel").classList.remove("hidden");
+        resetStep = 1;
+        document.getElementById("resetNextBtn").style.display = "block";
+        document.getElementById("resetConfirmBtn").style.display = "none";
+        document.getElementById("securityQuestion").style.display = "none";
+        document.getElementById("newPassArea").style.display = "none";
+    };
+
+    // 事件绑定
+    document.getElementById("generateWebLockBtn").onclick = generateWebLock;
+    document.getElementById("copyWebLockBtn").onclick = copyWebLock;
+    document.getElementById("createProductBtn").onclick = () => {
+        let n=prompt("商品名"), p=parseFloat(prompt("价格")), s=parseInt(prompt("库存")), t=prompt("类型 card/virtual/physical","card"), c=t==="card"?prompt("卡密(一行一个)"):"", ct=prompt("联系方式(QQ/微信/手机号)");
+        if(n&&p) createProduct(n,p,s,t,c,ct);
+    };
+    document.getElementById("showRechargeBtn").onclick = () => { document.getElementById("rechargeModal").classList.remove("hidden"); document.getElementById("modalOverlay").classList.remove("hidden"); };
+    document.getElementById("closeRechargeBtn").onclick = () => { document.getElementById("rechargeModal").classList.add("hidden"); document.getElementById("modalOverlay").classList.add("hidden"); };
+    document.getElementById("submitApplyBtn").onclick = () => {
+        let amt = parseFloat(document.getElementById("applyAmount").value);
+        if(amt>0 && currentProofData) { addRechargeRequest(amt, currentProofData); document.getElementById("closeRechargeBtn").click(); }
+        else if(amt>0 && !currentProofData) alert("请上传支付凭证");
+        else alert("金额无效");
+    };
+    document.getElementById("proofImage").onchange = function(e) {
+        let f=e.target.files[0]; if(f){ let r=new FileReader(); r.onload=ev=>{ currentProofData = ev.target.result; document.getElementById("proofPreview").innerHTML=`<img src="${currentProofData}" style="max-width:100px;">`; }; r.readAsDataURL(f); }
+    };
+    document.getElementById("showWithdrawBtn").onclick = () => {
+        currentWithdrawImage = null;
+        document.getElementById("withdrawImagePreview").innerHTML = "";
+        document.getElementById("withdrawImage").value = "";
+        document.getElementById("withdrawAmount").value = "";
+        document.getElementById("withdrawAccount").value = "";
+        document.getElementById("withdrawBalance").innerText = "¥"+currentUser.balance;
+        document.getElementById("withdrawModal").classList.remove("hidden");
+        document.getElementById("modalOverlay").classList.remove("hidden");
+    };
+    document.getElementById("closeWithdrawBtn").onclick = () => { document.getElementById("withdrawModal").classList.add("hidden"); document.getElementById("modalOverlay").classList.add("hidden"); };
+    document.getElementById("submitWithdrawBtn").onclick = () => {
+        let amt = parseFloat(document.getElementById("withdrawAmount").value);
+        let acc = document.getElementById("withdrawAccount").value;
+        if(amt>0 && acc) { requestWithdraw(amt, acc, currentWithdrawImage); document.getElementById("closeWithdrawBtn").click(); }
+        else alert("填写完整");
+    };
+    document.getElementById("withdrawImage").onchange = function(e) {
+        let f=e.target.files[0]; if(f){ let r=new FileReader(); r.onload=ev=>{ currentWithdrawImage = ev.target.result; document.getElementById("withdrawImagePreview").innerHTML=`<img src="${currentWithdrawImage}" style="max-width:100px;">`; }; r.readAsDataURL(f); }
+    };
+    document.getElementById("showCardBtn").onclick = () => { document.getElementById("cardModal").classList.remove("hidden"); document.getElementById("modalOverlay").classList.remove("hidden"); };
+    document.getElementById("closeCardBtn").onclick = () => { document.getElementById("cardModal").classList.add("hidden"); document.getElementById("modalOverlay").classList.add("hidden"); };
+    document.getElementById("redeemCardBtn").onclick = () => {
+        let code=document.getElementById("cardCode").value;
+        redeemProductCard(code);
+        document.getElementById("closeCardBtn").click();
+        renderUserPanel();
+    };
+    document.getElementById("genProductCardBtn").onclick = () => {
+        let selected = document.getElementById("productForCard").value;
+        let maxUses = parseInt(document.getElementById("cardUses").value) || 1;
+        if(!selected) return alert("请选择商品");
+        let product = JSON.parse(selected);
+        generateProductCard(product, maxUses);
+    };
+    document.getElementById("showGenerateCardBtn").onclick = () => {
+        // 切换到生成卡密标签页
+        document.querySelector(".tab-btn[data-tab='genCard']").click();
+    };
+
+    // ========== 登录（带封禁检测）==========
+    function doLogin(user) {
+        if(user.banned) {
+            alert("❌ 您的账号已被封禁，无法登录。请联系管理员。");
+            return false;
+        }
+        currentUser = user;
+        localStorage.setItem("currentUserId", user.id);
+        document.getElementById("authPanel").classList.add("hidden");
+        document.getElementById("mainPanel").classList.remove("hidden");
+        renderUserPanel();
+        renderProductList();
+        renderOrdersList();
+        renderSites();
+        renderProductForCardSelect();
+        renderMyGeneratedCards();
+        return true;
+    }
+    
+    function autoLogin() {
+        let id = localStorage.getItem("currentUserId");
+        if(id) {
+            let user = allUsers.find(u => u.id == parseInt(id));
+            if(user && !user.banned) {
+                doLogin(user);
+                return true;
+            } else if(user && user.banned) {
+                localStorage.removeItem("currentUserId");
+                alert("您的账号已被封禁，请联系管理员");
+            }
+        }
+        return false;
+    }
+    
+    document.getElementById("loginBtn").onclick = () => {
+        let account = document.getElementById("loginUser").value;
+        let pwd = document.getElementById("loginPass").value;
+        let user = allUsers.find(u => (u.username === account || u.email === account || u.phone === account) && u.password === pwd);
+        if(user && user.banned) {
+            alert("❌ 您的账号已被封禁，无法登录。请联系管理员。");
+        } else if(user) {
+            doLogin(user);
+        } else {
+            alert("账号或密码错误");
+        }
+    };
+    
+    document.getElementById("toRegisterBtn").onclick = () => { document.getElementById("authPanel").classList.add("hidden"); document.getElementById("registerPanel").classList.remove("hidden"); };
+    document.getElementById("toResetBtn").onclick = () => { document.getElementById("authPanel").classList.add("hidden"); document.getElementById("resetPanel").classList.remove("hidden"); };
+    document.getElementById("backToLoginBtn").onclick = () => { document.getElementById("registerPanel").classList.add("hidden"); document.getElementById("authPanel").classList.remove("hidden"); };
+    document.getElementById("backToLoginBtn2").onclick = () => { document.getElementById("resetPanel").classList.add("hidden"); document.getElementById("authPanel").classList.remove("hidden"); };
+    document.getElementById("logoutBtn").onclick = () => { currentUser = null; localStorage.removeItem("currentUserId"); location.reload(); };
+
+    if(allUsers.length === 0) {
+        allUsers.push({ id:1, username:"test", password:"123", balance:2000, sites:[], orders:[], role:"user", email:"test@test.com", phone:"13800000000", securityQuestion:"你最喜欢什么颜色？", securityAnswer:"蓝色" });
+        saveAll();
+    }
+    if(!autoLogin()) document.getElementById("authPanel").classList.remove("hidden");
+    
+    window.copyToClipboard = copyToClipboard;
+    window.deleteProduct = deleteProduct;
+    window.showBuyModal = showBuyModal;
+    window.reportProduct = reportProduct;
+</script>
+</body>
+</html>
