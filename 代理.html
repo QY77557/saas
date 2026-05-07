@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <title>龙傲天 · 代理商版</title>
+    <style>
+        *{margin:0;padding:0;box-sizing:border-box;}
+        body{background:#f5f7fc;font-family:system-ui;padding:20px;color:#1a2c3e;}
+        .card{background:#fff;border-radius:32px;padding:28px;margin-bottom:20px;box-shadow:0 2px 6px rgba(0,0,0,0.02);}
+        button{background:#1e6f3f;color:white;padding:10px 20px;border-radius:60px;border:none;cursor:pointer;}
+        .product-item{background:#f8fafc;border-radius:28px;padding:16px;margin-top:12px;}
+        .flex-between{display:flex;justify-content:space-between;align-items:center;gap:10px;}
+        .stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:16px;margin-bottom:20px;}
+        .stat-card{background:#fff;border-radius:32px;padding:20px;text-align:center;}
+        .stat-number{font-size:2rem;font-weight:800;color:#1e6f3f;}
+        .danger{background:#b91c1c;}
+        .hidden{display:none;}
+    </style>
+</head>
+<body>
+<div id="loginPanel" class="card" style="max-width:400px;margin:0 auto;">
+    <h2>🔐 龙傲天 · 代理商登录</h2>
+    <input type="text" id="agentUser" placeholder="用户名" style="width:100%;padding:14px;margin:10px 0;border-radius:60px;border:1px solid #e2e8f0;">
+    <input type="password" id="agentPass" placeholder="密码" style="width:100%;padding:14px;margin:10px 0;border-radius:60px;border:1px solid #e2e8f0;">
+    <button id="agentLoginBtn">登录</button>
+    <div id="loginError" style="color:#b91c1c;"></div>
+</div>
+<div id="mainPanel" class="hidden">
+    <div class="stats">
+        <div class="stat-card"><div class="stat-number" id="totalProducts">0</div><div>总商品</div></div>
+        <div class="stat-card"><div class="stat-number" id="totalReports">0</div><div>待处理举报</div></div>
+        <div class="stat-card"><div class="stat-number" id="totalUsers">0</div><div>总用户</div></div>
+        <div class="stat-card"><div class="stat-number" id="totalComplaints">0</div><div>投诉反馈</div></div>
+    </div>
+    <div class="card"><div class="flex-between"><h2>🚨 举报处理</h2><button id="logoutBtn">退出</button></div><div id="reportsList"></div></div>
+    <div class="card"><h2>👥 封禁普通用户</h2><input type="text" id="searchUser" placeholder="搜索用户"><div id="userList"></div></div>
+    <div class="card"><h2>📦 全平台商品</h2><div id="allProducts"></div></div>
+    <div class="card"><h2>📋 用户投诉</h2><div id="complaintsList"></div></div>
+</div>
+<script>
+    let allUsers = JSON.parse(localStorage.getItem("all_users")) || [];
+    let products = JSON.parse(localStorage.getItem("products")) || [];
+    let complaints = JSON.parse(localStorage.getItem("complaints")) || [];
+    let currentAgent = null;
+    function saveAllUsers(u) { localStorage.setItem("all_users", JSON.stringify(u)); }
+    function saveProducts(p) { localStorage.setItem("products", JSON.stringify(p)); }
+    function saveComplaints(c) { localStorage.setItem("complaints", JSON.stringify(c)); }
+    
+    function processReport(reportId, productId, sellerName, buyerName, amount) {
+        if(!confirm(`确认处理此举报？\n将退款 ¥${amount} 给 ${buyerName}\n封禁卖家 ${sellerName}`)) return;
+        let users = loadAllUsers();
+        let buyer = users.find(u => u.username === buyerName);
+        let seller = users.find(u => u.username === sellerName);
+        if(buyer && seller) {
+            if(seller.balance >= amount) { seller.balance -= amount; buyer.balance += amount; }
+            else { buyer.balance += seller.balance; seller.balance = 0; }
+            seller.banned = true;
+            let products = loadProducts();
+            products.forEach(p => { if(p.seller === sellerName) p.status = "banned"; });
+            saveProducts(products);
+            saveAllUsers(users);
+            let reports = JSON.parse(localStorage.getItem("product_reports") || "[]");
+            let report = reports.find(r => r.id === reportId);
+            if(report) { report.status = "resolved"; localStorage.setItem("product_reports", JSON.stringify(reports)); }
+            alert(`✅ 已处理！退款 ¥${amount} 给 ${buyerName}，卖家 ${sellerName} 已封禁`);
+            renderReports(); renderProducts(); renderUserList(); renderStats();
+        }
+    }
+    
+    function rejectReport(reportId) {
+        if(!confirm("驳回举报？")) return;
+        let reports = JSON.parse(localStorage.getItem("product_reports") || "[]");
+        let report = reports.find(r => r.id === reportId);
+        if(report) { report.status = "rejected"; localStorage.setItem("product_reports", JSON.stringify(reports)); alert("已驳回"); renderReports(); }
+    }
+    
+    function renderReports() {
+        let reports = JSON.parse(localStorage.getItem("product_reports") || "[]");
+        let pending = reports.filter(r => r.status === "pending");
+        let html = pending.map(r => {
+            let products = loadProducts();
+            let product = products.find(p => p.id === r.productId);
+            let amount = product ? product.price : 0;
+            return `<div class="product-item"><div><strong>商品：${r.productName}</strong><br>卖家：${r.seller}<br>举报人：${r.reporter}<br>原因：${r.reason}<br>时间：${r.time}</div><div class="flex-between" style="margin-top:12px;"><button class="danger" onclick='processReport(${r.id}, ${r.productId}, "${r.seller}", "${r.reporter}", ${amount})'>🔨 退款+封禁卖家</button><button onclick='rejectReport(${r.id})'>❌ 驳回</button></div></div>`;
+        }).join("");
+        document.getElementById("reportsList").innerHTML = pending.length ? html : "<div>暂无待处理举报</div>";
+        document.getElementById("totalReports").innerText = pending.length;
+    }
+    
+    function banUser(username) {
+        let users = loadAllUsers();
+        let user = users.find(u => u.username === username);
+        if(!user) return alert("用户不存在");
+        if(user.username === currentAgent.username) return alert("不能封禁自己");
+        if(user.role === "agent") return alert("不能封禁其他代理商，请联系管理员");
+        if(user.role === "admin") return alert("不能封禁管理员");
+        if(!confirm(`确认封禁用户 ${username} 吗？`)) return;
+        user.banned = true;
+        let products = loadProducts();
+        products.forEach(p => { if(p.seller === username) p.status = "banned"; });
+        saveProducts(products);
+        saveAllUsers(users);
+        alert(`✅ 用户 ${username} 已被封禁`);
+        renderUserList(); renderProducts(); renderStats();
+    }
+    
+    function unbanUser(username) {
+        let users = loadAllUsers();
+        let user = users.find(u => u.username === username);
+        if(!user) return alert("用户不存在");
+        if(!user.banned) return alert("该用户未被封禁");
+        if(!confirm(`确认解封用户 ${username} 吗？`)) return;
+        user.banned = false;
+        saveAllUsers(users);
+        alert(`✅ 用户 ${username} 已解封`);
+        renderUserList(); renderStats();
+    }
+    
+    function renderUserList() {
+        let users = loadAllUsers();
+        let keyword = document.getElementById("searchUser")?.value.toLowerCase() || "";
+        let filtered = users.filter(u => u.role !== "agent" && u.role !== "admin" && u.username.toLowerCase().includes(keyword));
+        let html = filtered.map(u => `
+            <div class="product-item">
+                <div><strong>${u.username}</strong>${u.banned ? '<span style="color:#ff6666;"> [已封禁]</span>' : ''}<br>余额: ¥${u.balance} | 密码: ${u.password}</div>
+                <div>${u.banned ? `<button onclick="unbanUser('${u.username}')">🔓 解封</button>` : `<button class="danger" onclick="banUser('${u.username}')">🔨 封禁用户</button>`}</div>
+            </div>
+        `).join("");
+        document.getElementById("userList").innerHTML = html || "暂无普通用户";
+    }
+    
+    function renderStats() {
+        let products = loadProducts();
+        let users = loadAllUsers();
+        let pendingReports = JSON.parse(localStorage.getItem("product_reports") || "[]").filter(r => r.status === "pending").length;
+        document.getElementById("totalProducts").innerText = products.length;
+        document.getElementById("totalReports").innerText = pendingReports;
+        document.getElementById("totalUsers").innerText = users.filter(u => u.role !== "admin").length;
+        document.getElementById("totalComplaints").innerText = complaints.length;
+    }
+    
+    function renderProducts() {
+        let products = loadProducts();
+        let html = products.map(p => `<div class="product-item"><div><strong>${p.name}</strong><br>💰 ¥${p.price} | 库存:${p.stock} | 销量:${p.sales||0}<br>👤 卖家:${p.seller}${p.status === "banned" ? ' <span style="color:#ff6666;">[已封禁]</span>' : ''}</div><button onclick='alert("卡密:\\n${p.cards || "无"}")'>详情</button></div>`).join("");
+        document.getElementById("allProducts").innerHTML = html || "暂无商品";
+    }
+    
+    function renderComplaints() {
+        let html = complaints.map(c => `<div class="product-item"><div><strong>${c.username}</strong><br>${c.content}<br>联系方式:${c.contact}<br>状态:${c.status}</div><button onclick="alert('已通知客服')">标记已读</button></div>`).join("");
+        document.getElementById("complaintsList").innerHTML = html || "暂无投诉";
+    }
+    
+    function doLogin(agent) {
+        if(agent.agentBanned) { alert("您的代理商权限已被封禁，请联系管理员"); return; }
+        currentAgent = agent;
+        localStorage.setItem("agent_username", agent.username);
+        document.getElementById("loginPanel").classList.add("hidden");
+        document.getElementById("mainPanel").classList.remove("hidden");
+        renderStats(); renderProducts(); renderReports(); renderUserList(); renderComplaints();
+    }
+    
+    function autoLogin() {
+        let u = localStorage.getItem("agent_username");
+        if(u) { 
+            let users = loadAllUsers(); 
+            let agent = users.find(a => a.role === "agent" && a.username === u); 
+            if(agent && !agent.agentBanned) { doLogin(agent); return true; } 
+            else if(agent && agent.agentBanned) { alert("您的代理商权限已被封禁"); localStorage.removeItem("agent_username"); }
+        }
+        return false;
+    }
+    
+    document.getElementById("agentLoginBtn").onclick = () => {
+        let users = loadAllUsers();
+        let agent = users.find(u => u.role === "agent" && u.username === document.getElementById("agentUser").value && u.password === document.getElementById("agentPass").value);
+        if(agent && agent.agentBanned) alert("该代理商账号已被封禁");
+        else if(agent) doLogin(agent);
+        else document.getElementById("loginError").innerText = "账号或密码错误";
+    };
+    document.getElementById("logoutBtn").onclick = () => { localStorage.removeItem("agent_username"); location.reload(); };
+    document.getElementById("searchUser")?.addEventListener("input", renderUserList);
+    
+    if(!autoLogin()) document.getElementById("loginPanel").classList.remove("hidden");
+    
+    window.processReport = processReport;
+    window.rejectReport = rejectReport;
+    window.banUser = banUser;
+    window.unbanUser = unbanUser;
+</script>
+</body>
+</html>
