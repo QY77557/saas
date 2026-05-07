@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <title>龙傲天 · 生成管理员账号</title>
+    <style>
+        *{margin:0;padding:0;box-sizing:border-box;}
+        body{background:#f5f7fc;font-family:system-ui;padding:30px;}
+        .card{background:#fff;border-radius:32px;padding:32px;max-width:500px;margin:0 auto;box-shadow:0 8px 20px rgba(0,0,0,0.05);}
+        input,button{width:100%;padding:14px;margin:12px 0;border-radius:60px;border:1px solid #e2e8f0;}
+        button{background:#1e6f3f;color:white;border:none;cursor:pointer;font-weight:600;}
+        .success{background:#e6f7ec;padding:16px;border-radius:24px;margin-top:20px;}
+        .admin-item{padding:12px;border-bottom:1px solid #edf2f7;display:flex;justify-content:space-between;}
+    </style>
+</head>
+<body>
+<div class="card">
+    <h2>👑 生成管理员账号</h2>
+    <p style="margin-bottom:12px;">独立工具，只有知道这个页面的人才能创建管理员</p>
+    <input type="text" id="adminName" placeholder="管理员用户名">
+    <input type="text" id="adminPwd" placeholder="密码" value="admin123">
+    <button id="createAdminBtn">生成管理员</button>
+    <div id="result"></div>
+</div>
+<div class="card" id="adminListCard">
+    <h3>📋 当前管理员列表</h3>
+    <div id="adminList"></div>
+</div>
+<script>
+    function loadAllUsers() { return JSON.parse(localStorage.getItem("all_users")) || []; }
+    function saveAllUsers(users) { localStorage.setItem("all_users", JSON.stringify(users)); }
+
+    function createAdmin(username, password) {
+        if(!username.trim()) return alert("请输入用户名");
+        if(!password.trim()) return alert("请输入密码");
+        let users = loadAllUsers();
+        if(users.find(u => u.username === username)) {
+            document.getElementById("result").innerHTML = '<div class="success" style="color:#b91c1c;">❌ 用户名已存在</div>';
+            return;
+        }
+        let newAdmin = { id: Date.now(), username, password, balance: 0, sites: [], orders: [], role: "admin", banned: false };
+        users.push(newAdmin);
+        saveAllUsers(users);
+        document.getElementById("result").innerHTML = `<div class="success">✅ 管理员 ${username} 创建成功<br>密码：${password}</div>`;
+        document.getElementById("adminName").value = "";
+        renderAdminList();
+    }
+
+    function renderAdminList() {
+        let users = loadAllUsers();
+        let admins = users.filter(u => u.role === "admin");
+        if(admins.length === 0) {
+            document.getElementById("adminListCard").style.display = "none";
+            return;
+        }
+        document.getElementById("adminListCard").style.display = "block";
+        document.getElementById("adminList").innerHTML = admins.map(admin => `
+            <div class="admin-item">
+                <span><strong>${admin.username}</strong> | 密码：${admin.password}</span>
+                ${admin.username !== "admin" ? `<button onclick="deleteAdmin(${admin.id})" style="background:#b91c1c;padding:4px 12px;">删除</button>` : '<span style="color:#aaa;">默认账号</span>'}
+            </div>
+        `).join("");
+    }
+
+    window.deleteAdmin = (id) => {
+        let users = loadAllUsers();
+        let admin = users.find(u => u.id === id);
+        if(admin?.username === "admin") return alert("不能删除默认管理员");
+        users = users.filter(u => u.id !== id);
+        saveAllUsers(users);
+        renderAdminList();
+    };
+
+    document.getElementById("createAdminBtn").onclick = () => {
+        let name = document.getElementById("adminName").value;
+        let pwd = document.getElementById("adminPwd").value;
+        createAdmin(name, pwd);
+    };
+
+    // 如果没有默认管理员，自动补一个
+    let users = loadAllUsers();
+    if(!users.find(u => u.role === "admin")) {
+        users.push({ id: 1, username: "admin", password: "admin123", balance: 0, role: "admin" });
+        saveAllUsers(users);
+    }
+    renderAdminList();
+</script>
+</body>
+</html>
