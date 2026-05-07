@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <title>龙傲天 · 生成管理员</title>
+    <style>
+        *{margin:0;padding:0;box-sizing:border-box;}
+        body{background:#f5f7fc;font-family:system-ui;padding:30px;color:#1a2c3e;}
+        .card{background:#fff;border-radius:32px;padding:32px;max-width:500px;margin:0 auto;box-shadow:0 8px 20px rgba(0,0,0,0.05);}
+        input,button{width:100%;padding:14px;margin:12px 0;border-radius:60px;border:1px solid #e2e8f0;}
+        button{background:#1e6f3f;color:white;border:none;cursor:pointer;}
+        .success{background:#e6f7ec;padding:16px;border-radius:24px;margin-top:20px;}
+        .admin-item{padding:12px;border-bottom:1px solid #edf2f7;display:flex;justify-content:space-between;}
+    </style>
+</head>
+<body>
+<div class="card">
+    <h2>👑 生成管理员账号</h2>
+    <input type="text" id="adminName" placeholder="用户名" value="admin_">
+    <input type="text" id="adminPwd" placeholder="密码" value="admin123">
+    <button id="createBtn">生成管理员</button>
+    <div id="result"></div>
+</div>
+<div class="card" id="listCard"><h3>管理员列表</h3><div id="adminList"></div></div>
+<script>
+    function loadUsers(){ return JSON.parse(localStorage.getItem("all_users"))||[]; }
+    function saveUsers(u){ localStorage.setItem("all_users",JSON.stringify(u)); }
+    function renderList(){
+        let users=loadUsers();
+        let admins=users.filter(u=>u.role==="admin");
+        document.getElementById("adminList").innerHTML=admins.map(a=>`<div class="admin-item"><span><strong>${a.username}</strong> 密码${a.password}</span><button onclick="deleteAdmin(${a.id})">删除</button></div>`).join("");
+    }
+    window.deleteAdmin=(id)=>{
+        let users=loadUsers();
+        let admin=users.find(u=>u.id===id);
+        if(admin?.username==="admin") return alert("不能删除默认管理员");
+        users=users.filter(u=>u.id!==id);
+        saveUsers(users);
+        renderList();
+    };
+    document.getElementById("createBtn").onclick=()=>{
+        let name=document.getElementById("adminName").value;
+        let pwd=document.getElementById("adminPwd").value;
+        let users=loadUsers();
+        if(users.find(u=>u.username===name)) return alert("用户名已存在");
+        users.push({ id:Date.now(), username:name, password:pwd, balance:0, sites:[], orders:[], role:"admin" });
+        saveUsers(users);
+        document.getElementById("result").innerHTML=`<div class="success">✅ 管理员 ${name} 创建成功</div>`;
+        renderList();
+    };
+    let users=loadUsers();
+    if(!users.find(u=>u.role==="admin")) users.push({ id:1, username:"admin", password:"admin123", balance:0, role:"admin" });
+    saveUsers(users);
+    renderList();
+</script>
+</body>
+</html>
