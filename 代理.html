@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <title>龙傲天 · 代理商版</title>
+    <style>
+        *{margin:0;padding:0;box-sizing:border-box;}
+        body{background:#f5f7fc;font-family:system-ui;padding:20px;color:#1a2c3e;}
+        .card{background:#fff;border-radius:32px;padding:28px;margin-bottom:20px;box-shadow:0 2px 6px rgba(0,0,0,0.02);}
+        button{background:#1e6f3f;color:white;padding:10px 20px;border-radius:60px;border:none;cursor:pointer;}
+        .product-item{background:#f8fafc;border-radius:28px;padding:16px;margin-top:12px;}
+        .flex-between{display:flex;justify-content:space-between;align-items:center;gap:10px;}
+        .stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:16px;margin-bottom:20px;}
+        .stat-card{background:#fff;border-radius:32px;padding:20px;text-align:center;}
+        .stat-number{font-size:2rem;font-weight:800;color:#1e6f3f;}
+        .danger{background:#b91c1c;}
+        .hidden{display:none;}
+        .announcement{background:#eef2ff;padding:12px 20px;border-radius:28px;margin-bottom:20px;border-left:5px solid #1e6f3f;}
+    </style>
+</head>
+<body>
+<div id="loginPanel" class="card" style="max-width:400px;margin:0 auto;">
+    <h2>🔐 龙傲天 · 代理商登录</h2>
+    <input type="text" id="agentUser" placeholder="用户名" style="width:100%;padding:14px;margin:10px 0;border-radius:60px;border:1px solid #e2e8f0;">
+    <input type="password" id="agentPass" placeholder="密码" style="width:100%;padding:14px;margin:10px 0;border-radius:60px;border:1px solid #e2e8f0;">
+    <button id="agentLoginBtn">登录</button>
+    <div id="loginError" style="color:#b91c1c;"></div>
+</div>
+
+<div id="mainPanel" class="hidden">
+    <div id="announcementBar" class="announcement">📢 加载公告中...</div>
+
+    <div class="stats">
+        <div class="stat-card"><div class="stat-number" id="totalProducts">0</div><div>总商品</div></div>
+        <div class="stat-card"><div class="stat-number" id="totalReports">0</div><div>待处理举报</div></div>
+        <div class="stat-card"><div class="stat-number" id="totalUsers">0</div><div>总用户</div></div>
+        <div class="stat-card"><div class="stat-number" id="totalComplaints">0</div><div>投诉反馈</div></div>
+    </div>
+
+    <div class="card"><div class="flex-between"><h2>🚨 举报处理</h2><button id="logoutBtn">退出</button></div><div id="reportsList"></div></div>
+    <div class="card"><h2>👥 封禁普通用户</h2><input type="text" id="searchUser" placeholder="搜索用户"><div id="userList"></div></div>
+    <div class="card"><h2>📦 全平台商品</h2><div id="allProducts"></div></div>
+    <div class="card"><h2>📋 用户投诉</h2><div id="complaintsList"></div></div>
+</div>
+
+<script>
+    let allUsers = JSON.parse(localStorage.getItem("all_users")) || [];
+    let products = JSON.parse(localStorage.getItem("products")) || [];
+    let complaints = JSON.parse(localStorage.getItem("complaints")) || [];
+    let currentAgent = null;
+
+    function saveAllUsers(u) { localStorage.setItem("all_users", JSON.stringify(u)); }
+    function saveProducts(p) { localStorage.setItem("products", JSON.stringify(p)); }
+    function saveComplaints(c) { localStorage.setItem("complaints", JSON.stringify(c)); }
+
+    // 公告
+    function loadAnnouncement() {
+        let announcement = localStorage.getItem("platform_announcement") || "欢迎使用龙傲天平台。";
+        document.getElementById("announcementBar").innerHTML = `📢 ${announcement}`;
+    }
+    loadAnnouncement();
+    window.addEventListener("storage", function(e) {
+        if(e.key === "platform_announcement") loadAnnouncement();
+    });
+
+    // 投诉加载与处理
+    function loadAllComplaints() {
+        let complaints = JSON.parse(localStorage.getItem("complaints")) || [];
+        let html = complaints.map(c => `
+            <div class="product-item">
+                <div><strong>👤 ${c.username}</strong><br>📢 ${c.content}<br>📞 ${c.contact}<br>状态：${c.status}<br>${c.time}</div>
+                <div>
+                    ${c.status === "待处理" ? `<button onclick="markComplaintResolved(${c.id})">✅ 标记已处理</button>` : '<span>已处理</span>'}
+                </div>
+            </div>
+        `).join("");
+        document.getElementById("complaintsList").innerHTML = html || "暂无投诉";
+        document.getElementById("totalComplaints").innerText = complaints.filter(c => c.status === "待处理").length;
+    }
+    window.markComplaintResolved = function(id) {
+        let complaints = JSON.parse(localStorage.getItem("complaints")) || [];
+        let complaint = complaints.find(c => c.id === id);
+        if (complaint) {
+            complaint.status = "已处理";
+            localStorage.setItem("complaints", JSON.stringify(complaints));
+            loadAllComplaints();
+            alert("投诉已标记为处理");
+        }
+    };
+
+    function renderStats() {
+        let pendingReports = JSON.parse(localStorage.getItem("product_reports") || "[]").filter(r => r.status === "pending").length;
+        document.getElementById("totalProducts").innerText = products.length;
+        document.getElementById("totalReports").innerText = pendingReports;
+        document.getElementById("totalUsers").innerText = allUsers.filter(u => u.role !== "admin").length;
+    }
+    function renderProducts() {
+        document.getElementById("allProducts").innerHTML = products.map(p => `<div class="product-item"><div><strong>${p.name}</strong> ¥${p.price} 卖家${p.seller}</div><button onclick='alert("卡密:${p.cards || "无"}")'>查看</button></div>`).join("") || "暂无";
+    }
+    function renderUserList() {
+        let kw = document.getElementById("searchUser")?.value || "";
+        let filtered = allUsers.filter(u => u.role !== "agent" && u.role !== "admin" && u.username.includes(kw));
+        document.getElementById("userList").innerHTML = filtered.map(u => `<div class="product-item"><div><strong>${u.username}</strong> 余额¥${u.balance} ${u.banned ? "[已封禁]" : ""}</div><div><button class="danger" onclick="banUser('${u.username}')">封禁</button><button onclick="unbanUser('${u.username}')">解封</button></div></div>`).join("") || "暂无";
+    }
+    function banUser(username) {
+        let u = allUsers.find(u => u.username === username);
+        if (u && u.role !== "agent" && u.role !== "admin") {
+            u.banned = true;
+            saveAllUsers(allUsers);
+            alert(`${username} 已封禁`);
+            renderUserList();
+        } else alert("不能封禁代理商或管理员");
+    }
+    function unbanUser(username) {
+        let u = allUsers.find(u => u.username === username);
+        if (u && u.banned) {
+            u.banned = false;
+            saveAllUsers(allUsers);
+            alert(`${username} 已解封`);
+            renderUserList();
+        }
+    }
+
+    function doLogin(agent) {
+        if (agent.agentBanned) { alert("您的代理商权限已被封禁"); return; }
+        currentAgent = agent;
+        localStorage.setItem("agent_username", agent.username);
+        document.getElementById("loginPanel").classList.add("hidden");
+        document.getElementById("mainPanel").classList.remove("hidden");
+        renderStats(); renderProducts(); renderUserList(); loadAllComplaints();
+    }
+    function autoLogin() {
+        let u = localStorage.getItem("agent_username");
+        if (u) {
+            let agent = allUsers.find(a => a.role === "agent" && a.username === u);
+            if (agent && !agent.agentBanned) { doLogin(agent); return true; }
+            else if (agent && agent.agentBanned) alert("代理商权限已被封禁");
+        }
+        return false;
+    }
+    document.getElementById("agentLoginBtn").onclick = () => {
+        let agent = allUsers.find(u => u.role === "agent" && u.username === document.getElementById("agentUser").value && u.password === document.getElementById("agentPass").value);
+        if (agent && agent.agentBanned) alert("代理商权限已被封禁");
+        else if (agent) doLogin(agent);
+        else document.getElementById("loginError").innerText = "账号或密码错误";
+    };
+    document.getElementById("logoutBtn").onclick = () => { localStorage.removeItem("agent_username"); location.reload(); };
+    document.getElementById("searchUser")?.addEventListener("input", renderUserList);
+
+    if (!autoLogin()) document.getElementById("loginPanel").classList.remove("hidden");
+</script>
+</body>
+</html>
